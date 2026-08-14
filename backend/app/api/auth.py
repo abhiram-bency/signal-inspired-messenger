@@ -21,7 +21,7 @@ def get_auth_service(user_repo: UserRepository = Depends(get_user_repo)) -> Auth
 
 def set_auth_cookie(response: Response, token: str):
     settings = get_settings()
-    is_prod = settings.environment == "production"
+    is_prod = settings.is_production
 
     response.set_cookie(
         key="session_token",
