@@ -27,6 +27,8 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
 from app.core.logging import configure_logging
+from app.database.database import init_db
+from app.database.seed import seed_database
 
 # ---------------------------------------------------------------------------
 # Logging — configure before anything else runs
@@ -53,6 +55,11 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
     logger.info("Environment: %s", settings.environment)
     logger.info("Log level:   %s", settings.log_level)
     logger.info("CORS origins: %s", settings.cors_origins_list)
+
+    # Initialize database and seed demo data
+    await init_db()
+    if settings.environment != "production" or True: # Force seed for MVP submission
+        await seed_database()
 
     yield  # Application runs here
 
