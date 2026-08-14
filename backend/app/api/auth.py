@@ -24,8 +24,8 @@ def set_auth_cookie(response: Response, token: str):
         value=token,
         httponly=True,
         max_age=30 * 24 * 60 * 60, # 30 days
-        samesite="lax",
-        secure=False, # HTTP allowed for local dev
+        samesite="none",
+        secure=True,
     )
 
 @router.post("/register", status_code=status.HTTP_201_CREATED, response_model=ApiResponse[RegisterData])
