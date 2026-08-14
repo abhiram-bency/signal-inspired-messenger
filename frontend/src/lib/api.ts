@@ -1,113 +1,53 @@
-/**
- * Centralised API client.
- *
- * All REST requests from the frontend must go through this module.
- * Components and hooks must never construct raw fetch() calls.
- *
- * Architecture reference: ARCHITECTURE §13 (API Client)
- * Spec reference: API_SPEC §3 (Base URL)
- *
- * Phase 0: Provides the base infrastructure.
- * Phase 5+: Will add authentication header injection, token refresh, and
- *            typed response helpers per resource domain.
- */
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
-/** Standard error shape returned by the FastAPI backend. */
-export interface ApiError {
-  error: {
-    code: string;
-    message: string;
-    details: Record<string, string> | null;
-  };
-}
-
-/** Thrown when the backend returns a non-2xx response. */
-export class ApiRequestError extends Error {
-  public readonly status: number;
-  public readonly code: string;
-  public readonly details: Record<string, string> | null;
-
-  constructor(status: number, error: ApiError["error"]) {
-    super(error.message);
-    this.name = "ApiRequestError";
-    this.status = status;
-    this.code = error.code;
-    this.details = error.details;
+export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const url = `${API_BASE}/api/v1${endpoint}`;
+  
+  const headers = new Headers(options.headers || {});
+  if (!headers.has('Content-Type') && options.method !== 'GET') {
+    headers.set('Content-Type', 'application/json');
   }
-}
-
-/**
- * Core fetch wrapper.
- *
- * - Prepends the backend base URL.
- * - Sends credentials (cookies) with every request.
- * - Parses JSON responses.
- * - Throws ApiRequestError for non-2xx responses.
- */
-async function request<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const url = `${API_BASE_URL}${path}`;
 
   const response = await fetch(url, {
     ...options,
-    credentials: "include", // Required for HttpOnly cookie auth
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers ?? {}),
-    },
+    headers,
+    credentials: 'omit', // We actually need 'include' to send cookies
   });
 
-  // 204 No Content — return empty object
-  if (response.status === 204) {
-    return {} as T;
-  }
-
-  const json = await response.json();
-
-  if (!response.ok) {
-    // Backend always returns { error: { code, message, details } }
-    throw new ApiRequestError(response.status, json.error ?? {
-      code: "UNKNOWN_ERROR",
-      message: `HTTP ${response.status}`,
-      details: null,
-    });
-  }
-
-  return json as T;
+  return handleResponse<T>(response);
 }
 
-/** Convenience helpers for HTTP verbs. */
-export const api = {
-  get: <T>(path: string, options?: RequestInit) =>
-    request<T>(path, { method: "GET", ...options }),
+export async function fetchApiWithCredentials<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const url = `${API_BASE}/api/v1${endpoint}`;
+  
+  const headers = new Headers(options.headers || {});
+  if (!headers.has('Content-Type') && options.method !== 'GET') {
+    headers.set('Content-Type', 'application/json');
+  }
 
-  post: <T>(path: string, body?: unknown, options?: RequestInit) =>
-    request<T>(path, {
-      method: "POST",
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      ...options,
-    }),
+  const response = await fetch(url, {
+    ...options,
+    headers,
+    credentials: 'include', // Send cookies
+  });
 
-  patch: <T>(path: string, body?: unknown, options?: RequestInit) =>
-    request<T>(path, {
-      method: "PATCH",
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      ...options,
-    }),
+  return handleResponse<T>(response);
+}
 
-  delete: <T>(path: string, options?: RequestInit) =>
-    request<T>(path, { method: "DELETE", ...options }),
-};
+async function handleResponse<T>(response: Response): Promise<T> {
+  let data;
+  try {
+    data = await response.json();
+  } catch (err) {
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+    return {} as T; // 204 No Content
+  }
 
-/**
- * Health check — verifies frontend can reach the backend.
- * Used on the minimal shell page to surface connectivity problems early.
- */
-export async function checkBackendHealth(): Promise<{ status: string }> {
-  return api.get<{ status: string }>("/health");
+  if (!response.ok) {
+    throw new Error(data.error?.message || response.statusText);
+  }
+
+  return data;
 }

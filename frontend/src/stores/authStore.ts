@@ -1,20 +1,52 @@
-/**
- * Authentication store — Phase 5.
- *
- * Will manage:
- *   - Current authenticated user
- *   - Authentication loading state
- *   - login() / logout() / restoreSession() actions
- *
- * Architecture reference: ARCHITECTURE §10 (Authentication State)
- *
- * Phase 0: Module exists as a typed placeholder.
- * Phase 5: Implemented with Zustand and REST API integration.
- */
+import { create } from 'zustand';
+import { fetchApiWithCredentials } from '@/lib/api';
 
-// Phase 5 implementation placeholder.
-// import { create } from "zustand";
-// import { api } from "@/lib/api";
-// import type { User } from "@/types/user";
+export interface User {
+  id: string;
+  username: string | null;
+  phone: string | null;
+  display_name: string;
+  avatar_url: string | null;
+  is_online: boolean;
+  last_seen_at: string | null;
+}
 
-export {};
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  setUser: (user: User | null) => void;
+  restoreSession: () => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  isAuthenticated: false,
+  isLoading: true,
+  setUser: (user) => set({ user, isAuthenticated: !!user }),
+  restoreSession: async () => {
+    try {
+      set({ isLoading: true });
+      const res = await fetchApiWithCredentials<{ data: User }>('/auth/me');
+      if (res && res.data) {
+        set({ user: res.data, isAuthenticated: true });
+      } else {
+        set({ user: null, isAuthenticated: false });
+      }
+    } catch (error) {
+      set({ user: null, isAuthenticated: false });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  logout: async () => {
+    try {
+      await fetchApiWithCredentials('/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Logout failed', e);
+    } finally {
+      set({ user: null, isAuthenticated: false });
+    }
+  }
+}));
