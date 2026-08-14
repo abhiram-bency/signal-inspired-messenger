@@ -9,9 +9,34 @@ This module will provide:
 Implemented in Phase 5. Do not add logic here before that phase.
 """
 
-# Phase 5 implementation placeholder.
-# Imports for Phase 5:
-#   from fastapi import Depends, HTTPException, status
-#   from sqlalchemy.orm import Session
-#   from app.database.database import SessionLocal
-#   from app.core.security import verify_token
+from typing import AsyncGenerator, Optional
+from fastapi import Request, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database.database import get_db
+from app.database.models import User
+from app.repositories.user_repository import UserRepository
+
+async def get_user_repo(db: AsyncSession = Depends(get_db)) -> UserRepository:
+    return UserRepository(db)
+
+async def get_current_user(request: Request, user_repo: UserRepository = Depends(get_user_repo)) -> User:
+    token = request.cookies.get("session_token")
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+        
+    session = await user_repo.get_session_by_token(token)
+    if not session or not session.user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired session")
+        
+    return session.user
+
+async def get_current_session_id(request: Request, user_repo: UserRepository = Depends(get_user_repo)) -> str:
+    token = request.cookies.get("session_token")
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+        
+    session = await user_repo.get_session_by_token(token)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired session")
+        
+    return session.id
