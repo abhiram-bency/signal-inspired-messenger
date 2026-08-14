@@ -12,7 +12,14 @@ class WebSocketClient {
   private pingInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    const backendUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
+    let backendUrl = process.env.NEXT_PUBLIC_WS_URL;
+    if (!backendUrl) {
+      if (process.env.NEXT_PUBLIC_API_URL) {
+        backendUrl = process.env.NEXT_PUBLIC_API_URL.replace(/^http/, 'ws');
+      } else {
+        backendUrl = 'ws://localhost:8000';
+      }
+    }
     this.url = `${backendUrl}/ws`;
   }
 

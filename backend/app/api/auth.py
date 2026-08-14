@@ -4,6 +4,7 @@ from typing import Any
 
 from app.database.database import get_db
 from app.database.models import User
+from app.core.config import get_settings
 from app.core.dependencies import get_user_repo, get_current_user, get_current_session_id
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
@@ -19,14 +20,22 @@ def get_auth_service(user_repo: UserRepository = Depends(get_user_repo)) -> Auth
     return AuthService(user_repo)
 
 def set_auth_cookie(response: Response, token: str):
+    settings = get_settings()
+    is_prod = settings.environment == "production"
+    
     response.set_cookie(
         key="session_token",
         value=token,
         httponly=True,
         max_age=30 * 24 * 60 * 60, # 30 days
-        samesite="none",
-        secure=True,
+        samesite="none" if is_prod else "lax",
+        secure=is_prod,
     )
+    
+    if is_prod:
+        cookie_header = response.headers.get("set-cookie")
+        if cookie_header and "Partitioned" not in cookie_header:
+            response.headers["set-cookie"] = f"{cookie_header}; Partitioned"
 
 @router.post("/register", status_code=status.HTTP_201_CREATED, response_model=ApiResponse[RegisterData])
 async def register(
