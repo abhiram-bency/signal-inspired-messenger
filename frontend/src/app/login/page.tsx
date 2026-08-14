@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchApiWithCredentials } from '@/lib/api';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore, User } from '@/stores/authStore';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -30,8 +30,8 @@ export default function LoginPage() {
       if (res.data?.otp_required) {
         setStep(2);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to find account.');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Failed to find account.');
     } finally {
       setLoading(false);
     }
@@ -43,17 +43,17 @@ export default function LoginPage() {
     setLoading(true);
     
     try {
-      const res = await fetchApiWithCredentials<{ data: { authenticated: boolean, user: any } }>('/auth/login', {
+      const res = await fetchApiWithCredentials<{ data: { authenticated: boolean, user: Record<string, unknown> } }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ identifier, otp })
       });
       
       if (res.data?.authenticated) {
-        setUser(res.data.user);
+        setUser(res.data.user as unknown as User);
         router.push('/chat'); // Redirect to protected route
       }
-    } catch (err: any) {
-      setError(err.message || 'Invalid OTP.');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Invalid OTP.');
     } finally {
       setLoading(false);
     }
@@ -137,7 +137,7 @@ export default function LoginPage() {
         )}
 
         <div className="text-center text-sm">
-          <span className="text-gray-600 dark:text-gray-400">Don't have an account? </span>
+          <span className="text-gray-600 dark:text-gray-400">Don&apos;t have an account? </span>
           <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">
             Register here
           </Link>

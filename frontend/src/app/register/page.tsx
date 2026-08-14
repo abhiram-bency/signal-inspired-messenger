@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchApi, fetchApiWithCredentials } from '@/lib/api';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore, User } from '@/stores/authStore';
 import Link from 'next/link';
 
 export default function RegisterPage() {
@@ -40,8 +40,8 @@ export default function RegisterPage() {
       if (res.data?.otp_required) {
         setStep(2);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to register account.');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Failed to register account.');
     } finally {
       setLoading(false);
     }
@@ -53,17 +53,17 @@ export default function RegisterPage() {
     setLoading(true);
     
     try {
-      const res = await fetchApiWithCredentials<{ data: { authenticated: boolean, user: any } }>('/auth/verify-otp', {
+      const res = await fetchApiWithCredentials<{ data: { authenticated: boolean, user: Record<string, unknown> } }>('/auth/verify-otp', {
         method: 'POST',
         body: JSON.stringify({ identifier, otp })
       });
       
       if (res.data?.authenticated) {
-        setUser(res.data.user);
+        setUser(res.data.user as unknown as User);
         router.push('/chat'); // Redirect to protected route
       }
-    } catch (err: any) {
-      setError(err.message || 'Invalid OTP.');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Invalid OTP.');
     } finally {
       setLoading(false);
     }
