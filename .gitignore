@@ -1,0 +1,96 @@
+# =============================================================================
+# Signal-Inspired Messenger — .gitignore
+# =============================================================================
+
+# --------------- Secrets / Environment ----------------------------------------
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env.local
+
+# --------------- Python / Backend ---------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+MANIFEST
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+
+# Type checker / linting
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+*.py,cover
+
+# SQLite database files
+*.db
+*.sqlite
+*.sqlite3
+backend/data/
+
+# --------------- Node.js / Frontend ------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+
+# Next.js build output
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Next.js cache
+frontend/.next/
+.next/
+
+# TypeScript build info
+*.tsbuildinfo
+frontend/next-env.d.ts
+
+# --------------- OS -----------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# --------------- Editor / IDE -------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*.tmp
+*~
+
+# --------------- Misc ---------------------------------------------------------
+screenshots/*.png
+# (allow the screenshots/ directory itself via .gitkeep)
+!screenshots/.gitkeep
