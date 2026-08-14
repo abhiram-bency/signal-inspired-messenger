@@ -155,12 +155,12 @@ async def readiness_check() -> dict[str, Any]:
 # API v1 router mounts
 # Routers are uncommented here as each phase is implemented.
 # ---------------------------------------------------------------------------
-from app.api import auth, conversations
+from app.api import auth, conversations, messages
 
 API_V1_PREFIX = "/api/v1"
 app.include_router(auth.router, prefix=API_V1_PREFIX, tags=["Authentication"])
 # app.include_router(users.router, prefix=API_V1_PREFIX, tags=["Users"])
 # app.include_router(contacts.router, prefix=API_V1_PREFIX, tags=["Contacts"])
 app.include_router(conversations.router, prefix=API_V1_PREFIX, tags=["Conversations"])
-# app.include_router(messages.router, prefix=API_V1_PREFIX, tags=["Messages"])
+app.include_router(messages.router, prefix=API_V1_PREFIX, tags=["Messages"])
 # app.include_router(groups.router, prefix=API_V1_PREFIX, tags=["Groups"])
