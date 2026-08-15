@@ -94,3 +94,4 @@ Thumbs.db
 screenshots/*.png
 # (allow the screenshots/ directory itself via .gitkeep)
 !screenshots/.gitkeep
+backend/test_*.db
