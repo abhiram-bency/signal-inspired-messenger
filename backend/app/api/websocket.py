@@ -82,6 +82,25 @@ async def websocket_endpoint(
                         reply_to_id=reply_to_id
                     )
                     
+                    # Fetch sender details for the broadcasted message
+                    from app.schemas.message import MessageResponse, MessageSender
+                    sender_detail = MessageSender(
+                        id=current_user.id,
+                        display_name=current_user.display_name,
+                        avatar_url=current_user.avatar_url
+                    )
+                    
+                    full_message = MessageResponse(
+                        id=new_msg.id,
+                        conversation_id=new_msg.conversation_id,
+                        sender=sender_detail,
+                        content=new_msg.content,
+                        message_type=new_msg.message_type,
+                        reply_to=reply_to_id,
+                        created_at=new_msg.created_at,
+                        status="sent"
+                    ).model_dump(mode="json")
+                    
                     # Send ACK to sender
                     ack_event = {
                         "type": "message.ack",
@@ -89,13 +108,7 @@ async def websocket_endpoint(
                         "timestamp": utc_now().isoformat() + "Z",
                         "payload": {
                             "client_message_id": client_message_id,
-                            "message": {
-                                "id": new_msg.id,
-                                "conversation_id": new_msg.conversation_id,
-                                "sender_id": new_msg.sender_id,
-                                "content": new_msg.content,
-                                "created_at": new_msg.created_at.isoformat() + "Z"
-                            },
+                            "message": full_message,
                             "status": "sent"
                         }
                     }
@@ -105,29 +118,11 @@ async def websocket_endpoint(
                     conv = await conv_repo.get_conversation_by_id(conversation_id)
                     member_ids = [m.user_id for m in conv.members]
                     
-                    # Fetch sender details for the broadcasted message
-                    sender_detail = {
-                        "id": current_user.id,
-                        "display_name": current_user.display_name,
-                        "avatar_url": current_user.avatar_url
-                    }
-                    
                     broadcast_event = {
                         "type": "message.new",
                         "event_id": str(uuid.uuid4()),
                         "timestamp": utc_now().isoformat() + "Z",
-                        "payload": {
-                            "id": new_msg.id,
-                            "conversation_id": new_msg.conversation_id,
-                            "sender": sender_detail,
-                            "content": new_msg.content,
-                            "message_type": new_msg.message_type,
-                            "reply_to": new_msg.reply_to,
-                            "created_at": new_msg.created_at.isoformat() + "Z",
-                            "edited_at": None,
-                            "deleted_at": None,
-                            "status": "sent"
-                        }
+                        "payload": full_message
                     }
                     
                     # Broadcast only to other members, sender gets ACK
