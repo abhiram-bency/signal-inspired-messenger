@@ -1,6 +1,6 @@
 # Signal-Inspired Messenger
 
-A full-stack, real-time messaging application inspired by Signal, built as an SDE Fullstack Assignment for Scalar AI Labs.
+A full-stack, real-time messaging application inspired by Signal, built with Next.js, FastAPI, SQLite, and WebSockets.
 
 [![Backend Tests](https://github.com/abhiram_bency/signal-inspired-messenger/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/abhiram_bency/signal-inspired-messenger/actions/workflows/backend-ci.yml)
 
