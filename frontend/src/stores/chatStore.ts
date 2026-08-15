@@ -8,6 +8,7 @@ interface ChatState {
   connectionReady: boolean;
   
   setConversations: (conversations: ConversationListItem[]) => void;
+  addConversation: (conversation: ConversationListItem) => void;
   setActiveConversationId: (id: string | null) => void;
   setMessages: (conversationId: string, messages: MessageResponse[]) => void;
   addMessage: (conversationId: string, message: MessageResponse) => void;
@@ -23,6 +24,12 @@ export const useChatStore = create<ChatState>((set) => ({
   connectionReady: false,
   
   setConversations: (conversations) => set({ conversations }),
+  
+  addConversation: (conversation) => set((state) => {
+    // Avoid duplicates
+    if (state.conversations.some(c => c.id === conversation.id)) return state;
+    return { conversations: [conversation, ...state.conversations] };
+  }),
   
   setActiveConversationId: (id) => set({ activeConversationId: id }),
   

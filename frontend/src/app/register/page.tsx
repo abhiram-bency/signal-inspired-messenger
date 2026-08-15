@@ -80,7 +80,7 @@ export default function RegisterPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-50 p-3 rounded-lg text-sm text-center">
+          <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center">
             {error}
           </div>
         )}

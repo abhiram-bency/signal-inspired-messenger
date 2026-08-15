@@ -2,9 +2,13 @@ import React, { useEffect } from 'react';
 import { useChatStore } from '../../stores/chatStore';
 import { fetchApiWithCredentials } from '../../lib/api';
 import { ConversationListItem } from '../../types/chat';
-import { Search, User, MessageCircle } from 'lucide-react';
+import { Search, User, MessageCircle, Users } from 'lucide-react';
 
-export function Sidebar() {
+interface SidebarProps {
+  onOpenContacts?: () => void;
+}
+
+export function Sidebar({ onOpenContacts }: SidebarProps) {
   const { conversations, setConversations, activeConversationId, setActiveConversationId } = useChatStore();
 
   useEffect(() => {
@@ -22,7 +26,7 @@ export function Sidebar() {
   return (
     <div className="w-80 border-r border-gray-200 flex flex-col bg-white h-full">
       {/* Header */}
-      <div className="h-16 border-b border-gray-200 flex items-center px-4 shrink-0">
+      <div className="h-16 border-b border-gray-200 flex items-center px-4 shrink-0 justify-between">
         <h1 className="text-xl font-semibold text-gray-800">Chats</h1>
       </div>
 
@@ -32,7 +36,7 @@ export function Sidebar() {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Search" 
+            placeholder="Search chats" 
             className="w-full bg-gray-100 rounded-full py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -41,9 +45,19 @@ export function Sidebar() {
       {/* Conversation List */}
       <div className="flex-1 overflow-y-auto">
         {conversations.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 text-sm flex flex-col items-center">
-            <MessageCircle className="h-8 w-8 mb-2 text-gray-300" />
-            No conversations yet.
+          <div className="p-8 text-center flex flex-col items-center justify-center h-full">
+            <MessageCircle className="h-12 w-12 mb-4 text-gray-300" />
+            <h3 className="text-gray-900 font-medium mb-1">No conversations yet</h3>
+            <p className="text-gray-500 text-sm mb-6">Start chatting with your contacts</p>
+            {onOpenContacts && (
+              <button 
+                onClick={onOpenContacts}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Users className="h-4 w-4" />
+                Find someone to message
+              </button>
+            )}
           </div>
         ) : (
           conversations.map((conv) => {

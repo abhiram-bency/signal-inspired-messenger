@@ -1,19 +1,24 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../stores/authStore';
 import { useChatStore } from '../../stores/chatStore';
 import { WsEvent } from '../../types/chat';
 import { Sidebar } from '../../components/chat/Sidebar';
 import { ChatWindow } from '../../components/chat/ChatWindow';
+import { ProfileModal } from '../../components/profile/ProfileModal';
+import { ContactsModal } from '../../components/contacts/ContactsModal';
 import { wsClient } from '../../lib/websocket';
-import { LogOut, Shield, User as UserIcon } from 'lucide-react';
+import { LogOut, Shield, User as UserIcon, Users } from 'lucide-react';
 
 export default function ChatPage() {
   const router = useRouter();
   const { isAuthenticated, user, restoreSession, logout: authLogout } = useAuthStore();
   const { setConnectionReady, addMessage, updateMessageStatus, logout: chatLogout } = useChatStore();
+  
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isContactsOpen, setIsContactsOpen] = useState(false);
 
   useEffect(() => {
     // Basic auth check
@@ -101,8 +106,23 @@ export default function ChatPage() {
           <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg text-white font-bold text-lg mb-2">
             S
           </div>
-          <button className="w-10 h-10 rounded-lg bg-gray-800 text-white flex items-center justify-center hover:bg-gray-700 transition-colors" title={user.display_name}>
-            <UserIcon className="h-5 w-5" />
+          <button 
+            onClick={() => setIsProfileOpen(true)}
+            className="w-10 h-10 rounded-lg bg-gray-800 text-white flex items-center justify-center hover:bg-gray-700 transition-colors" 
+            title={user.display_name}
+          >
+            {user.avatar_url ? (
+               <img src={user.avatar_url} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+            ) : (
+               <UserIcon className="h-5 w-5" />
+            )}
+          </button>
+          <button 
+            onClick={() => setIsContactsOpen(true)}
+            className="w-10 h-10 rounded-lg text-gray-400 flex items-center justify-center hover:bg-gray-800 hover:text-white transition-colors mt-2" 
+            title="Contacts"
+          >
+            <Users className="h-5 w-5" />
           </button>
         </div>
         <button 
@@ -116,9 +136,19 @@ export default function ChatPage() {
 
       {/* Main Layout */}
       <div className="flex-1 flex min-w-0">
-        <Sidebar />
+        <Sidebar onOpenContacts={() => setIsContactsOpen(true)} />
         <ChatWindow />
       </div>
+      
+      {/* Modals */}
+      <ProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+      />
+      <ContactsModal 
+        isOpen={isContactsOpen} 
+        onClose={() => setIsContactsOpen(false)} 
+      />
     </div>
   );
 }

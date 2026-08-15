@@ -36,6 +36,28 @@ class UserRepository:
         await self.session.refresh(user)
         return user
 
+    async def update_user(self, user: User) -> User:
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+    async def search_users(self, query: str, current_user_id: str, limit: int = 20) -> list[User]:
+        from sqlalchemy import or_, func
+        search_term = f"%{query.lower()}%"
+        result = await self.session.execute(
+            select(User)
+            .where(User.id != current_user_id)
+            .where(
+                or_(
+                    func.lower(User.username).like(search_term),
+                    func.lower(User.display_name).like(search_term)
+                )
+            )
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
     async def create_session(self, user_id: str, days: int = 30) -> Session:
         token_hash = secrets.token_urlsafe(64)
         expires_at = utc_now() + timedelta(days=days)

@@ -1,273 +1,157 @@
-/**
- * Application root page — Phase 0 shell.
- *
- * Spec reference: MASTER_PROJECT_SPEC §8 (Application Shell)
- * Architecture reference: ARCHITECTURE §8 (Next.js App Router)
- *
- * Phase 0:
- *   Renders a minimal "application is running" page that:
- *   - Confirms the Next.js frontend is working
- *   - Shows the implementation status
- *   - Provides links to documentation
- *
- * Phase 5+:
- *   This page redirects unauthenticated users to /auth/login and
- *   authenticated users to /app (the Signal-style main layout).
- *   All current content here is replaced by auth-aware routing.
- */
+'use client';
 
-import type { Metadata } from "next";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { fetchApiWithCredentials } from '@/lib/api';
+import { Shield, MessageCircle, Lock, Zap, Users, ArrowRight } from 'lucide-react';
 
-export const metadata: Metadata = {
-  title: "Signal — Secure Messaging Platform",
-};
+export default function LandingPage() {
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
 
-// ── Implementation status ─────────────────────────────────────────────────────
-const PHASES = [
-  { id: 0, label: "Repository Bootstrap", status: "complete" },
-  { id: 1, label: "Backend Configuration", status: "complete" },
-  { id: 2, label: "Database Foundation", status: "pending" },
-  { id: 3, label: "Seed Data", status: "pending" },
-  { id: 4, label: "Domain Models & Repositories", status: "pending" },
-  { id: 5, label: "Authentication", status: "pending" },
-  { id: 6, label: "Profile", status: "pending" },
-  { id: 7, label: "Contacts", status: "pending" },
-  { id: 8, label: "Conversation System", status: "pending" },
-  { id: 9, label: "REST API", status: "pending" },
-  { id: 10, label: "WebSocket Infrastructure", status: "pending" },
-  { id: 11, label: "Real-Time Messaging", status: "pending" },
-  { id: 12, label: "Receipts & Typing", status: "pending" },
-  { id: 13, label: "Group Conversations", status: "pending" },
-  { id: 14, label: "Signal UI Polish", status: "pending" },
-  { id: 15, label: "Testing & Deployment", status: "pending" },
-] as const;
+  useEffect(() => {
+    // If the user already has a valid session, redirect to /chat
+    async function checkAuth() {
+      try {
+        const res = await fetchApiWithCredentials<{ data: { id: string } }>('/auth/me');
+        if (res?.data?.id) {
+          router.replace('/chat');
+          return;
+        }
+      } catch {
+        // Not authenticated — stay on landing page
+      } finally {
+        setChecking(false);
+      }
+    }
+    checkAuth();
+  }, [router]);
 
-// ── Page ─────────────────────────────────────────────────────────────────────
-export default function HomePage() {
-  const completedCount = PHASES.filter((p) => p.status === "complete").length;
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-950">
+        <div className="animate-pulse flex flex-col items-center">
+          <Shield className="h-10 w-10 text-blue-500 mb-4" />
+          <p className="text-gray-400 font-medium text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "2rem",
-        background: "var(--color-bg-primary)",
-        color: "var(--color-text-primary)",
-        fontFamily: "var(--font-sans)",
-      }}
-    >
-      {/* ── Logo area ── */}
-      <div style={{ marginBottom: "3rem", textAlign: "center" }}>
-        <div
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: "50%",
-            background:
-              "linear-gradient(135deg, var(--color-signal-blue) 0%, var(--color-signal-teal) 100%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 1.5rem",
-            fontSize: "2rem",
-          }}
-        >
-          ✦
+    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
+      {/* Navigation */}
+      <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto w-full">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
+            <Shield className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-lg font-semibold tracking-tight">Signal-Inspired</span>
         </div>
-        <h1
-          style={{
-            fontSize: "2rem",
-            fontWeight: 700,
-            letterSpacing: "-0.03em",
-            margin: 0,
-            color: "var(--color-text-primary)",
-          }}
-        >
-          Signal
-        </h1>
-        <p
-          style={{
-            marginTop: "0.5rem",
-            color: "var(--color-text-secondary)",
-            fontSize: "0.9375rem",
-          }}
-        >
-          Secure Messaging Platform — Phase 0 Shell
+        <div className="flex items-center gap-3">
+          <Link
+            href="/login"
+            className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/register"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+          >
+            Get Started
+          </Link>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <main className="flex-1 flex flex-col items-center justify-center px-6 text-center max-w-3xl mx-auto">
+        <div className="mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-8">
+            <Lock className="h-3 w-3" />
+            Privacy-focused messaging
+          </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] text-white">
+            Say hello to
+            <br />
+            <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              private messaging
+            </span>
+          </h1>
+          <p className="mt-5 text-lg text-gray-400 max-w-xl mx-auto leading-relaxed">
+            A Signal-inspired messaging platform with real-time conversations,
+            secure sessions, and a modern interface. Built for speed and simplicity.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 mt-4">
+          <Link
+            href="/register"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-lg shadow-blue-600/20"
+          >
+            Create Account
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-gray-300 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors"
+          >
+            Sign In
+          </Link>
+        </div>
+
+        {/* Demo hint */}
+        <p className="mt-6 text-xs text-gray-500">
+          Demo users available — sign in as <code className="text-gray-400 bg-white/5 px-1.5 py-0.5 rounded">alice</code> with OTP <code className="text-gray-400 bg-white/5 px-1.5 py-0.5 rounded">123456</code>
         </p>
-      </div>
+      </main>
 
-      {/* ── Status card ── */}
-      <div
-        style={{
-          background: "var(--color-surface-1)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "16px",
-          padding: "2rem",
-          width: "100%",
-          maxWidth: "520px",
-          marginBottom: "2rem",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "1rem",
-              fontWeight: 600,
-              color: "var(--color-text-primary)",
-            }}
-          >
-            Implementation Status
-          </h2>
-          <span
-            style={{
-              fontSize: "0.8125rem",
-              color: "var(--color-text-secondary)",
-              background: "var(--color-bg-overlay)",
-              padding: "0.25rem 0.75rem",
-              borderRadius: "99px",
-            }}
-          >
-            {completedCount} / {PHASES.length} phases
-          </span>
+      {/* Features */}
+      <section className="px-6 pb-16 pt-8">
+        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <FeatureCard
+            icon={<MessageCircle className="h-5 w-5" />}
+            title="Real-Time Chat"
+            description="Instant message delivery with WebSocket connections and optimistic UI updates."
+          />
+          <FeatureCard
+            icon={<Zap className="h-5 w-5" />}
+            title="Secure Sessions"
+            description="Cookie-based authentication with server-side session management."
+          />
+          <FeatureCard
+            icon={<Users className="h-5 w-5" />}
+            title="Group Conversations"
+            description="Create groups, direct messages, and manage conversations with ease."
+          />
         </div>
+      </section>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          {PHASES.map((phase) => (
-            <div
-              key={phase.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.75rem",
-                padding: "0.5rem 0.75rem",
-                borderRadius: "8px",
-                background:
-                  phase.status === "complete"
-                    ? "rgba(34, 197, 94, 0.08)"
-                    : "transparent",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "0.75rem",
-                  width: 20,
-                  height: 20,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  background:
-                    phase.status === "complete"
-                      ? "var(--color-success)"
-                      : "var(--color-bg-overlay)",
-                  color:
-                    phase.status === "complete"
-                      ? "#fff"
-                      : "var(--color-text-muted)",
-                  fontWeight: 700,
-                }}
-              >
-                {phase.status === "complete" ? "✓" : phase.id}
-              </span>
-              <span
-                style={{
-                  fontSize: "0.875rem",
-                  color:
-                    phase.status === "complete"
-                      ? "var(--color-text-primary)"
-                      : "var(--color-text-muted)",
-                  fontWeight: phase.status === "complete" ? 500 : 400,
-                }}
-              >
-                {phase.label}
-              </span>
-            </div>
-          ))}
+      {/* Footer */}
+      <footer className="px-6 py-6 border-t border-white/5">
+        <div className="max-w-6xl mx-auto flex items-center justify-between text-xs text-gray-500">
+          <span>Signal-Inspired Messenger — Internship Assignment</span>
+          <div className="flex gap-4">
+            <span>Next.js</span>
+            <span>FastAPI</span>
+            <span>WebSocket</span>
+            <span>SQLite</span>
+          </div>
         </div>
-      </div>
+      </footer>
+    </div>
+  );
+}
 
-      {/* ── Tech stack ── */}
-      <div
-        style={{
-          display: "flex",
-          gap: "0.75rem",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          marginBottom: "2rem",
-        }}
-      >
-        {[
-          "Next.js 15",
-          "TypeScript",
-          "Tailwind CSS",
-          "FastAPI",
-          "SQLite",
-          "WebSocket",
-        ].map((tech) => (
-          <span
-            key={tech}
-            style={{
-              fontSize: "0.8125rem",
-              padding: "0.25rem 0.75rem",
-              background: "var(--color-surface-2)",
-              border: "1px solid var(--color-border)",
-              borderRadius: "99px",
-              color: "var(--color-text-secondary)",
-            }}
-          >
-            {tech}
-          </span>
-        ))}
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+  return (
+    <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:border-white/10 transition-colors">
+      <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-3">
+        {icon}
       </div>
-
-      {/* ── Links ── */}
-      <div
-        style={{
-          display: "flex",
-          gap: "1.5rem",
-          fontSize: "0.875rem",
-          color: "var(--color-text-muted)",
-        }}
-      >
-        <a
-          href="/api/health"
-          style={{ color: "var(--color-signal-blue)", textDecoration: "none" }}
-        >
-          Backend Health ↗
-        </a>
-        <a
-          href="/api/docs"
-          style={{ color: "var(--color-signal-blue)", textDecoration: "none" }}
-        >
-          API Docs ↗
-        </a>
-      </div>
-
-      <p
-        style={{
-          marginTop: "3rem",
-          fontSize: "0.8125rem",
-          color: "var(--color-text-muted)",
-          textAlign: "center",
-        }}
-      >
-        This page is a Phase 0 placeholder.
-        <br />
-        The full Signal-style UI is implemented in Phase 8+.
-      </p>
+      <h3 className="font-semibold text-sm text-white mb-1.5">{title}</h3>
+      <p className="text-sm text-gray-400 leading-relaxed">{description}</p>
     </div>
   );
 }

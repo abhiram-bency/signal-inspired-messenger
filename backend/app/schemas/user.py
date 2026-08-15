@@ -12,3 +12,8 @@ class UserResponse(BaseModel):
     last_seen_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+class UpdateProfileRequest(BaseModel):
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    username: Optional[str] = None
