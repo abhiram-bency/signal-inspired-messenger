@@ -142,6 +142,60 @@ async def websocket_endpoint(
                     }
                     await manager.send_personal_message(error_event, websocket)
 
+            elif event_type == "receipt.update":
+                message_id = payload.get("message_id")
+                conversation_id = payload.get("conversation_id")
+                status_val = payload.get("status")
+                
+                try:
+                    await msg_service.update_receipt(message_id, user_id, status_val)
+                    
+                    # We need to broadcast this receipt update to the sender of the message
+                    # Since we don't have the message sender easily here without a query, we can just broadcast to conversation members
+                    # The frontend will update its state if it sent the message.
+                    conv = await conv_repo.get_conversation_by_id(conversation_id)
+                    member_ids = [m.user_id for m in conv.members]
+                    
+                    broadcast_event = {
+                        "type": "receipt.update",
+                        "event_id": str(uuid.uuid4()),
+                        "timestamp": utc_now().isoformat() + "Z",
+                        "payload": {
+                            "message_id": message_id,
+                            "conversation_id": conversation_id,
+                            "user_id": user_id,
+                            "status": status_val
+                        }
+                    }
+                    
+                    target_members = [mid for mid in member_ids if mid != user_id]
+                    await manager.broadcast_to_users(broadcast_event, target_members)
+                except Exception as e:
+                    print(f"Receipt update failed: {e}")
+
+            elif event_type in ["typing.start", "typing.stop"]:
+                conversation_id = payload.get("conversation_id")
+                
+                try:
+                    conv = await conv_repo.get_conversation_by_id(conversation_id)
+                    member_ids = [m.user_id for m in conv.members]
+                    
+                    broadcast_event = {
+                        "type": event_type,
+                        "event_id": str(uuid.uuid4()),
+                        "timestamp": utc_now().isoformat() + "Z",
+                        "payload": {
+                            "conversation_id": conversation_id,
+                            "user_id": user_id,
+                            "display_name": current_user.display_name
+                        }
+                    }
+                    
+                    target_members = [mid for mid in member_ids if mid != user_id]
+                    await manager.broadcast_to_users(broadcast_event, target_members)
+                except Exception as e:
+                    print(f"Typing broadcast failed: {e}")
+
             elif event_type == "ping":
                 await manager.send_personal_message({
                     "type": "pong",

@@ -75,6 +75,22 @@ class ConversationRepository:
         self.session.add(member)
         return member
 
+    async def get_member(self, conv_id: str, user_id: str) -> Optional[ConversationMember]:
+        result = await self.session.execute(
+            select(ConversationMember)
+            .where(
+                and_(
+                    ConversationMember.conversation_id == conv_id,
+                    ConversationMember.user_id == user_id
+                )
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def remove_member(self, member: ConversationMember) -> None:
+        await self.session.delete(member)
+        await self.session.flush()
+
     async def get_last_message(self, conv_id: str) -> Optional[Message]:
         result = await self.session.execute(
             select(Message)

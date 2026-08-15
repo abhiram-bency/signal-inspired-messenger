@@ -13,6 +13,7 @@ interface ChatState {
   setMessages: (conversationId: string, messages: MessageResponse[]) => void;
   addMessage: (conversationId: string, message: MessageResponse) => void;
   updateMessageStatus: (conversationId: string, clientMessageId: string, serverMessage: MessageResponse) => void;
+  updateMessageReceipt: (conversationId: string, messageId: string, status: MessageResponse['status']) => void;
   setConnectionReady: (ready: boolean) => void;
   logout: () => void;
 }
@@ -31,7 +32,12 @@ export const useChatStore = create<ChatState>((set) => ({
     return { conversations: [conversation, ...state.conversations] };
   }),
   
-  setActiveConversationId: (id) => set({ activeConversationId: id }),
+  setActiveConversationId: (id) => set((state) => {
+    const newConvs = state.conversations.map(c => 
+      c.id === id ? { ...c, unread_count: 0 } : c
+    );
+    return { activeConversationId: id, conversations: newConvs };
+  }),
   
   setMessages: (conversationId, messages) => set((state) => ({
     messagesByConversation: {
@@ -43,16 +49,41 @@ export const useChatStore = create<ChatState>((set) => ({
   addMessage: (conversationId, message) => set((state) => {
     const existing = state.messagesByConversation[conversationId] || [];
     
-    // Prevent duplicates (checking by server ID or client ID)
+    // Prevent duplicates
     if (existing.some(m => m.id === message.id || (message.client_message_id && m.client_message_id === message.client_message_id))) {
       return state;
     }
     
+    const newMessages = [message, ...existing];
+    
+    // Update conversation list: move to top, update last_message, update unread_count if not active
+    const newConvs = [...state.conversations];
+    const convIndex = newConvs.findIndex(c => c.id === conversationId);
+    
+    if (convIndex > -1) {
+      const conv = { ...newConvs[convIndex] };
+      conv.last_message = {
+        id: message.id,
+        content: message.content,
+        sender_id: message.sender.id,
+        created_at: message.created_at
+      };
+      conv.updated_at = message.created_at;
+      
+      if (state.activeConversationId !== conversationId && !message.client_message_id) {
+        conv.unread_count = (conv.unread_count || 0) + 1;
+      }
+      
+      newConvs.splice(convIndex, 1);
+      newConvs.unshift(conv); // Move to top
+    }
+
     return {
       messagesByConversation: {
         ...state.messagesByConversation,
-        [conversationId]: [message, ...existing] // Assuming descending order (newest first)
-      }
+        [conversationId]: newMessages
+      },
+      conversations: newConvs
     };
   }),
 
@@ -61,6 +92,28 @@ export const useChatStore = create<ChatState>((set) => ({
     const updated = existing.map(msg => 
       (msg.client_message_id === clientMessageId || msg.id === serverMessage.id) ? serverMessage : msg
     );
+    
+    return {
+      messagesByConversation: {
+        ...state.messagesByConversation,
+        [conversationId]: updated
+      }
+    };
+  }),
+
+  updateMessageReceipt: (conversationId, messageId, status) => set((state) => {
+    const existing = state.messagesByConversation[conversationId] || [];
+    const updated = existing.map(msg => {
+      if (msg.id === messageId) {
+        // Upgrade status: sent -> delivered -> read
+        const currentScore = msg.status === 'read' ? 3 : msg.status === 'delivered' ? 2 : 1;
+        const newScore = status === 'read' ? 3 : status === 'delivered' ? 2 : 1;
+        if (newScore > currentScore) {
+          return { ...msg, status };
+        }
+      }
+      return msg;
+    });
     
     return {
       messagesByConversation: {

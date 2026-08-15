@@ -140,3 +140,44 @@ class ConversationService:
 
         await self.conv_repo.session.delete(conv)
         await self.conv_repo.session.commit()
+
+    async def add_group_member(self, conv_id: str, admin_user_id: str, target_user_id: str) -> ConversationDetail:
+        conv = await self.conv_repo.get_conversation_by_id(conv_id)
+        if not conv or conv.type != "group":
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group conversation not found")
+            
+        admin_member = await self.conv_repo.get_member(conv_id, admin_user_id)
+        if not admin_member or admin_member.role != "admin":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can add members")
+            
+        target_user = await self.user_repo.get_user_by_id(target_user_id)
+        if not target_user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            
+        existing_member = await self.conv_repo.get_member(conv_id, target_user_id)
+        if existing_member:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is already a member")
+            
+        await self.conv_repo.add_member(conv_id, target_user_id, "member")
+        await self.conv_repo.session.commit()
+        return await self.get_conversation(conv_id, admin_user_id)
+
+    async def remove_group_member(self, conv_id: str, admin_user_id: str, target_user_id: str) -> ConversationDetail:
+        conv = await self.conv_repo.get_conversation_by_id(conv_id)
+        if not conv or conv.type != "group":
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group conversation not found")
+            
+        admin_member = await self.conv_repo.get_member(conv_id, admin_user_id)
+        if not admin_member or admin_member.role != "admin":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can remove members")
+            
+        if admin_user_id == target_user_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot remove yourself as admin")
+            
+        target_member = await self.conv_repo.get_member(conv_id, target_user_id)
+        if not target_member:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User is not a member of this group")
+            
+        await self.conv_repo.remove_member(target_member)
+        await self.conv_repo.session.commit()
+        return await self.get_conversation(conv_id, admin_user_id)

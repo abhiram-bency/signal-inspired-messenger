@@ -30,35 +30,35 @@ export default function LandingPage() {
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
+      <div className="min-h-screen flex items-center justify-center bg-bg-primary">
         <div className="animate-pulse flex flex-col items-center">
-          <Shield className="h-10 w-10 text-blue-500 mb-4" />
-          <p className="text-gray-400 font-medium text-sm">Loading...</p>
+          <Shield className="h-10 w-10 text-signal-blue mb-4" />
+          <p className="text-text-muted font-medium text-sm">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
+    <div className="min-h-screen bg-bg-primary text-text-primary flex flex-col">
       {/* Navigation */}
       <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto w-full">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-signal-blue flex items-center justify-center">
             <Shield className="h-5 w-5 text-white" />
           </div>
-          <span className="text-lg font-semibold tracking-tight">Signal-Inspired</span>
+          <span className="text-lg font-semibold tracking-tight text-text-primary">Signal-Inspired</span>
         </div>
         <div className="flex items-center gap-3">
           <Link
             href="/login"
-            className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+            className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors rounded-lg hover:bg-surface-2"
           >
             Sign in
           </Link>
           <Link
             href="/register"
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+            className="px-4 py-2 text-sm font-medium text-white bg-signal-blue hover:bg-signal-blue-dark rounded-lg transition-colors shadow-sm"
           >
             Get Started
           </Link>
@@ -68,7 +68,7 @@ export default function LandingPage() {
       {/* Hero */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 text-center max-w-3xl mx-auto">
         <div className="mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-signal-blue/10 border border-signal-blue/20 text-signal-blue text-xs font-medium mb-8">
             <Lock className="h-3 w-3" />
             Privacy-focused messaging
           </div>
@@ -88,14 +88,14 @@ export default function LandingPage() {
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
           <Link
             href="/register"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-lg shadow-blue-600/20"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-white bg-signal-blue hover:bg-signal-blue-dark rounded-xl transition-colors shadow-lg shadow-signal-blue/20"
           >
             Create Account
             <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
             href="/login"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-gray-300 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-text-primary bg-surface-2 hover:bg-surface-3 border border-border-subtle rounded-xl transition-colors"
           >
             Sign In
           </Link>

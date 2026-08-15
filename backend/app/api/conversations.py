@@ -11,7 +11,7 @@ from app.services.conversation_service import ConversationService
 from app.schemas.auth import ApiResponse
 from app.schemas.conversation import (
     ConversationListItem, ConversationDetail, 
-    CreateDirectRequest, CreateGroupRequest
+    CreateDirectRequest, CreateGroupRequest, AddMemberRequest
 )
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
@@ -70,3 +70,23 @@ async def delete_conversation(
     conv_service: ConversationService = Depends(get_conversation_service)
 ) -> None:
     await conv_service.delete_conversation(conversation_id, current_user.id)
+
+@router.post("/{conversation_id}/members", response_model=ApiResponse[ConversationDetail])
+async def add_group_member(
+    conversation_id: str,
+    request: AddMemberRequest,
+    current_user: User = Depends(get_current_user),
+    conv_service: ConversationService = Depends(get_conversation_service)
+) -> Any:
+    detail = await conv_service.add_group_member(conversation_id, current_user.id, request.user_id)
+    return ApiResponse(data=detail)
+
+@router.delete("/{conversation_id}/members/{user_id}", response_model=ApiResponse[ConversationDetail])
+async def remove_group_member(
+    conversation_id: str,
+    user_id: str,
+    current_user: User = Depends(get_current_user),
+    conv_service: ConversationService = Depends(get_conversation_service)
+) -> Any:
+    detail = await conv_service.remove_group_member(conversation_id, current_user.id, user_id)
+    return ApiResponse(data=detail)

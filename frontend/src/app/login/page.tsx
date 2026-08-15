@@ -60,17 +60,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-md w-full p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-bg-primary">
+      <div className="max-w-md w-full p-8 bg-surface-1 rounded-2xl shadow-xl space-y-6 border border-border">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Signal-inspired</h1>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <h1 className="text-3xl font-bold text-text-primary">Signal-inspired</h1>
+          <p className="mt-2 text-sm text-text-muted">
             {step === 1 ? 'Sign in to your account' : 'Enter your verification code'}
           </p>
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-500 p-3 rounded-lg text-sm text-center">
+          <div className="bg-error/10 text-error p-3 rounded-lg text-sm text-center">
             {error}
           </div>
         )}
@@ -78,14 +78,14 @@ export default function LoginPage() {
         {step === 1 ? (
           <form onSubmit={handleStep1} className="space-y-4">
             <div>
-              <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="identifier" className="block text-sm font-medium text-text-secondary">
                 Username or Phone Number
               </label>
               <input
                 id="identifier"
                 type="text"
                 required
-                className="mt-1 block w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:text-white"
+                className="mt-1 block w-full px-4 py-2.5 bg-surface-2 border border-border-subtle rounded-xl focus:ring-1 focus:ring-signal-blue outline-none text-text-primary placeholder:text-text-muted transition-all"
                 placeholder="alice"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
@@ -95,7 +95,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || !identifier.trim()}
-              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
+              className="w-full flex justify-center py-2.5 px-4 rounded-xl shadow-sm text-sm font-medium text-white bg-signal-blue hover:bg-signal-blue-dark focus:outline-none disabled:opacity-50 transition-colors"
             >
               {loading ? 'Connecting...' : 'Continue'}
             </button>
@@ -103,15 +103,15 @@ export default function LoginPage() {
         ) : (
           <form onSubmit={handleStep2} className="space-y-4">
             <div>
-              <label htmlFor="otp" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="otp" className="block text-sm font-medium text-text-secondary">
                 Verification Code (OTP)
               </label>
-              <p className="text-xs text-gray-500 mb-2">Development: use 123456</p>
+              <p className="text-xs text-text-muted mb-2">Development: use 123456</p>
               <input
                 id="otp"
                 type="text"
                 required
-                className="mt-1 block w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:text-white text-center tracking-widest text-lg font-mono"
+                className="mt-1 block w-full px-4 py-2.5 bg-surface-2 border border-border-subtle rounded-xl focus:ring-1 focus:ring-signal-blue outline-none text-text-primary text-center tracking-widest text-lg font-mono placeholder:text-text-muted transition-all"
                 placeholder="------"
                 maxLength={6}
                 value={otp}
@@ -122,14 +122,14 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || otp.length < 6}
-              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
+              className="w-full flex justify-center py-2.5 px-4 rounded-xl shadow-sm text-sm font-medium text-white bg-signal-blue hover:bg-signal-blue-dark focus:outline-none disabled:opacity-50 transition-colors"
             >
               {loading ? 'Verifying...' : 'Verify'}
             </button>
             <button
               type="button"
               onClick={() => { setStep(1); setOtp(''); }}
-              className="w-full text-sm text-blue-600 dark:text-blue-400 hover:underline text-center mt-2"
+              className="w-full text-sm text-signal-blue hover:text-signal-blue-dark hover:underline text-center mt-2"
             >
               Back to login
             </button>
@@ -137,8 +137,8 @@ export default function LoginPage() {
         )}
 
         <div className="text-center text-sm">
-          <span className="text-gray-600 dark:text-gray-400">Don&apos;t have an account? </span>
-          <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">
+          <span className="text-text-muted">Don&apos;t have an account? </span>
+          <Link href="/register" className="font-medium text-signal-blue hover:text-signal-blue-dark hover:underline">
             Register here
           </Link>
         </div>

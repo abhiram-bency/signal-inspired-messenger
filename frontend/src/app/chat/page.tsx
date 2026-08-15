@@ -4,21 +4,24 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../stores/authStore';
 import { useChatStore } from '../../stores/chatStore';
-import { WsEvent } from '../../types/chat';
+import { useTypingStore } from '../../stores/typingStore';
+import { WsEvent, MessageResponse } from '../../types/chat';
 import { Sidebar } from '../../components/chat/Sidebar';
 import { ChatWindow } from '../../components/chat/ChatWindow';
 import { ProfileModal } from '../../components/profile/ProfileModal';
 import { ContactsModal } from '../../components/contacts/ContactsModal';
+import { SettingsModal } from '../../components/settings/SettingsModal';
 import { wsClient } from '../../lib/websocket';
-import { LogOut, Shield, User as UserIcon, Users } from 'lucide-react';
+import { LogOut, Shield, User as UserIcon, Users, Settings } from 'lucide-react';
 
 export default function ChatPage() {
   const router = useRouter();
   const { isAuthenticated, user, restoreSession, logout: authLogout } = useAuthStore();
-  const { setConnectionReady, addMessage, updateMessageStatus, logout: chatLogout } = useChatStore();
+  const { setConnectionReady, addMessage, updateMessageStatus, logout: chatLogout, activeConversationId } = useChatStore();
   
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isContactsOpen, setIsContactsOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
     // Basic auth check
@@ -58,19 +61,77 @@ export default function ChatPage() {
       const handleNew = (event: WsEvent) => {
         const msg = event.payload as Record<string, unknown>;
         if (msg && msg.conversation_id) {
+          const convId = msg.conversation_id as string;
+          const msgId = msg.id as string;
+          
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          addMessage(msg.conversation_id as string, msg as unknown as any);
+          addMessage(convId, msg as unknown as any);
+
+          // Send delivery receipt
+          wsClient.send('receipt.update', {
+            message_id: msgId,
+            conversation_id: convId,
+            status: 'delivered'
+          });
+
+          // Send read receipt if active
+          const activeConvId = useChatStore.getState().activeConversationId;
+          if (activeConvId === convId) {
+            wsClient.send('receipt.update', {
+              message_id: msgId,
+              conversation_id: convId,
+              status: 'read'
+            });
+          }
+        }
+      };
+
+      const handleReceipt = (event: WsEvent) => {
+        const payload = event.payload as Record<string, unknown>;
+        if (payload.message_id && payload.conversation_id && payload.status) {
+          useChatStore.getState().updateMessageReceipt(
+            payload.conversation_id as string,
+            payload.message_id as string,
+            payload.status as MessageResponse['status']
+          );
+        }
+      };
+
+      const handleTypingStart = (event: WsEvent) => {
+        const payload = event.payload as Record<string, unknown>;
+        if (payload.conversation_id && payload.user_id && payload.display_name) {
+          useTypingStore.getState().addTypingUser(
+            payload.conversation_id as string,
+            payload.user_id as string,
+            payload.display_name as string
+          );
+        }
+      };
+
+      const handleTypingStop = (event: WsEvent) => {
+        const payload = event.payload as Record<string, unknown>;
+        if (payload.conversation_id && payload.user_id) {
+          useTypingStore.getState().removeTypingUser(
+            payload.conversation_id as string,
+            payload.user_id as string
+          );
         }
       };
 
       wsClient.on('connection.ready', handleReady);
       wsClient.on('message.ack', handleAck);
       wsClient.on('message.new', handleNew);
+      wsClient.on('receipt.update', handleReceipt);
+      wsClient.on('typing.start', handleTypingStart);
+      wsClient.on('typing.stop', handleTypingStop);
 
       return () => {
         wsClient.off('connection.ready', handleReady);
         wsClient.off('message.ack', handleAck);
         wsClient.off('message.new', handleNew);
+        wsClient.off('receipt.update', handleReceipt);
+        wsClient.off('typing.start', handleTypingStart);
+        wsClient.off('typing.stop', handleTypingStop);
         wsClient.disconnect();
       };
     }
@@ -89,55 +150,68 @@ export default function ChatPage() {
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-bg-primary">
         <div className="animate-pulse flex flex-col items-center">
-          <Shield className="h-10 w-10 text-blue-500 mb-4" />
-          <p className="text-gray-500 font-medium">Connecting...</p>
+          <Shield className="h-10 w-10 text-signal-blue mb-4" />
+          <p className="text-text-muted font-medium">Connecting...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen w-full bg-white overflow-hidden text-gray-900 font-sans antialiased">
+    <div className="flex h-screen w-full bg-bg-primary overflow-hidden text-text-primary font-sans antialiased">
       {/* Side Navigation (App Rail) */}
-      <div className="w-16 bg-gray-900 flex flex-col items-center py-4 justify-between shrink-0 z-20">
+      <div className={`w-16 bg-surface-1 flex-col items-center py-4 justify-between shrink-0 z-20 border-r border-border ${activeConversationId ? 'hidden md:flex' : 'flex'}`}>
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg text-white font-bold text-lg mb-2">
+          <div className="w-10 h-10 rounded-xl bg-signal-blue flex items-center justify-center shadow-lg text-white font-bold text-lg mb-2">
             S
           </div>
           <button 
             onClick={() => setIsProfileOpen(true)}
-            className="w-10 h-10 rounded-lg bg-gray-800 text-white flex items-center justify-center hover:bg-gray-700 transition-colors" 
+            className="w-10 h-10 rounded-full bg-surface-2 text-text-primary flex items-center justify-center hover:bg-surface-3 transition-colors" 
             title={user.display_name}
           >
             {user.avatar_url ? (
-               <img src={user.avatar_url} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+               <img src={user.avatar_url} alt="Profile" className="w-10 h-10 rounded-full object-cover" />
             ) : (
-               <UserIcon className="h-5 w-5" />
+               <UserIcon className="h-5 w-5 text-text-secondary" />
             )}
           </button>
           <button 
             onClick={() => setIsContactsOpen(true)}
-            className="w-10 h-10 rounded-lg text-gray-400 flex items-center justify-center hover:bg-gray-800 hover:text-white transition-colors mt-2" 
+            className="w-10 h-10 rounded-lg text-text-secondary flex items-center justify-center hover:bg-surface-2 hover:text-text-primary transition-colors mt-2" 
             title="Contacts"
           >
             <Users className="h-5 w-5" />
           </button>
         </div>
-        <button 
-          onClick={handleLogout}
-          className="w-10 h-10 rounded-lg text-gray-400 flex items-center justify-center hover:bg-gray-800 hover:text-white transition-colors"
-          title="Logout"
-        >
-          <LogOut className="h-5 w-5" />
-        </button>
+        <div className="flex flex-col items-center space-y-4">
+          <button 
+            onClick={() => setIsSettingsOpen(true)}
+            className="w-10 h-10 rounded-lg text-text-secondary flex items-center justify-center hover:bg-surface-2 hover:text-text-primary transition-colors"
+            title="Settings"
+          >
+            <Settings className="h-5 w-5" />
+          </button>
+          <button 
+            onClick={handleLogout}
+            className="w-10 h-10 rounded-lg text-text-secondary flex items-center justify-center hover:bg-surface-2 hover:text-error transition-colors"
+            title="Logout"
+          >
+            <LogOut className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
       {/* Main Layout */}
       <div className="flex-1 flex min-w-0">
-        <Sidebar onOpenContacts={() => setIsContactsOpen(true)} />
-        <ChatWindow />
+        <div className={`w-full md:w-80 lg:w-96 shrink-0 border-r border-border ${activeConversationId ? 'hidden md:block' : 'block'}`}>
+          <Sidebar onOpenContacts={() => setIsContactsOpen(true)} />
+        </div>
+        <div className={`flex-1 min-w-0 ${!activeConversationId ? 'hidden md:flex' : 'flex'}`}>
+          <ChatWindow />
+        </div>
       </div>
       
       {/* Modals */}
@@ -149,6 +223,12 @@ export default function ChatPage() {
         isOpen={isContactsOpen} 
         onClose={() => setIsContactsOpen(false)} 
       />
+      {isSettingsOpen && (
+        <SettingsModal 
+          isOpen={isSettingsOpen} 
+          onClose={() => setIsSettingsOpen(false)} 
+        />
+      )}
     </div>
   );
 }

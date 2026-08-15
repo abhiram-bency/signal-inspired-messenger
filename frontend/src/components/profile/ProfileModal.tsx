@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, User as UserIcon, Camera, Loader2, Check } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { fetchApiWithCredentials } from '../../lib/api';
+import { useToastStore } from '../../stores/toastStore';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -17,8 +18,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const addToast = useToastStore((state) => state.addToast);
 
   useEffect(() => {
     if (user && isOpen) {
@@ -26,8 +26,6 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       setUsername(user.username || '');
       setAvatarUrl(user.avatar_url || '');
       setIsEditing(false);
-      setError('');
-      setSuccess(false);
     }
   }, [user, isOpen]);
 
@@ -36,13 +34,11 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!displayName.trim()) {
-      setError('Display name is required');
+      addToast('Display name is required', 'error');
       return;
     }
 
     setLoading(true);
-    setError('');
-    setSuccess(false);
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,29 +52,25 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       });
 
       setUser(res.data);
-      setSuccess(true);
+      addToast('Profile updated successfully', 'success');
       setIsEditing(false);
-      
-      setTimeout(() => {
-        setSuccess(false);
-      }, 3000);
     } catch (err: unknown) {
-      setError((err as Error).message || 'Failed to update profile');
+      addToast((err as Error).message || 'Failed to update profile', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-surface-1 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-border">
         
         {/* Header */}
-        <div className="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-gray-50/50">
-          <h2 className="text-lg font-semibold text-gray-900">Your Profile</h2>
+        <div className="h-16 border-b border-border flex items-center justify-between px-6 bg-surface-2">
+          <h2 className="text-lg font-semibold text-text-primary">Profile</h2>
           <button 
             onClick={onClose}
-            className="p-2 -mr-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 -mr-2 text-text-muted hover:text-text-primary hover:bg-surface-3 rounded-full transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -88,70 +80,58 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         <div className="p-6">
           <div className="flex flex-col items-center mb-6">
             <div className="relative group">
-              <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border-4 border-white shadow-sm">
+              <div className="w-24 h-24 rounded-full bg-surface-3 flex items-center justify-center overflow-hidden border-2 border-border-subtle shadow-sm">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
                 ) : (
-                  <UserIcon className="h-10 w-10 text-blue-500" />
+                  <UserIcon className="h-10 w-10 text-text-secondary" />
                 )}
               </div>
               {isEditing && (
-                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center cursor-pointer transition-opacity">
+                <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center cursor-pointer transition-opacity">
                   <Camera className="h-6 w-6 text-white" />
                 </div>
               )}
             </div>
             {!isEditing && (
               <div className="text-center mt-4">
-                <h3 className="text-xl font-bold text-gray-900">{user.display_name}</h3>
-                <p className="text-sm text-gray-500 mt-1">{user.username ? `@${user.username}` : user.phone}</p>
+                <h3 className="text-xl font-bold text-text-primary">{user.display_name}</h3>
+                <p className="text-sm text-text-muted mt-1">{user.username ? `@${user.username}` : user.phone}</p>
               </div>
             )}
           </div>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm text-center">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-lg text-sm text-center flex items-center justify-center gap-2">
-              <Check className="h-4 w-4" /> Profile updated successfully
-            </div>
-          )}
-
           {isEditing ? (
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Display Name</label>
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2.5 bg-surface-2 border border-border-subtle rounded-xl focus:ring-1 focus:ring-signal-blue outline-none transition-all text-text-primary placeholder:text-text-muted"
                   placeholder="Your Name"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Username (Optional)</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Username (Optional)</label>
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2.5 bg-surface-2 border border-border-subtle rounded-xl focus:ring-1 focus:ring-signal-blue outline-none transition-all text-text-primary placeholder:text-text-muted"
                   placeholder="username"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Avatar URL (Optional)</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Avatar URL (Optional)</label>
                 <input
                   type="url"
                   value={avatarUrl}
                   onChange={(e) => setAvatarUrl(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2.5 bg-surface-2 border border-border-subtle rounded-xl focus:ring-1 focus:ring-signal-blue outline-none transition-all text-text-primary placeholder:text-text-muted"
                   placeholder="https://example.com/avatar.jpg"
                 />
               </div>
@@ -161,16 +141,16 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                   type="button"
                   onClick={() => setIsEditing(false)}
                   disabled={loading}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-text-primary bg-surface-2 hover:bg-surface-3 rounded-xl transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading || !displayName.trim()}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-signal-blue hover:bg-signal-blue-dark rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
                 </button>
               </div>
             </form>
@@ -178,7 +158,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             <div className="pt-2">
               <button
                 onClick={() => setIsEditing(true)}
-                className="w-full px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-colors"
+                className="w-full px-4 py-2.5 text-sm font-medium text-text-primary bg-surface-2 hover:bg-surface-3 rounded-xl transition-colors"
               >
                 Edit Profile
               </button>

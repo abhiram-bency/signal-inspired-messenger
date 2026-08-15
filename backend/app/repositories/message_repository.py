@@ -41,12 +41,11 @@ class MessageRepository:
         stmt = (
             select(Message)
             .where(Message.conversation_id == conversation_id)
-            .options(selectinload(Message.sender))
+            .options(selectinload(Message.sender), selectinload(Message.receipts))
             .order_by(desc(Message.created_at))
         )
         
         if before_id:
-            # Need to get the created_at of the 'before' message to paginate backward in time
             cursor_res = await self.session.execute(select(Message.created_at).where(Message.id == before_id))
             cursor_time = cursor_res.scalar_one_or_none()
             if cursor_time:
@@ -56,3 +55,32 @@ class MessageRepository:
         
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def update_receipt(self, message_id: str, user_id: str, status: str) -> None:
+        from app.database.models import MessageReceipt
+        result = await self.session.execute(
+            select(MessageReceipt).where(MessageReceipt.message_id == message_id, MessageReceipt.user_id == user_id)
+        )
+        receipt = result.scalar_one_or_none()
+        now = utc_now()
+        
+        if not receipt:
+            receipt = MessageReceipt(
+                id=generate_uuid(),
+                message_id=message_id,
+                user_id=user_id,
+                status=status
+            )
+            if status == "delivered":
+                receipt.delivered_at = now
+            elif status == "read":
+                receipt.read_at = now
+            self.session.add(receipt)
+        else:
+            if status == "read" and receipt.status != "read":
+                receipt.status = "read"
+                receipt.read_at = now
+            elif status == "delivered" and receipt.status == "sent":
+                receipt.status = "delivered"
+                receipt.delivered_at = now
+        await self.session.flush()

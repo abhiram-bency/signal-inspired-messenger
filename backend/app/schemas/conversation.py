@@ -43,3 +43,6 @@ class CreateDirectRequest(BaseModel):
 class CreateGroupRequest(BaseModel):
     name: str
     member_ids: List[str]
+
+class AddMemberRequest(BaseModel):
+    user_id: str

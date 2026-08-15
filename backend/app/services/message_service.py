@@ -38,6 +38,15 @@ class MessageService:
                 display_name=msg.sender.display_name,
                 avatar_url=msg.sender.avatar_url
             )
+            
+            # Determine status based on receipts
+            msg_status = "sent"
+            if msg.sender_id == current_user_id and msg.receipts:
+                if any(r.status == "read" for r in msg.receipts):
+                    msg_status = "read"
+                elif any(r.status == "delivered" for r in msg.receipts):
+                    msg_status = "delivered"
+            
             resp = MessageResponse(
                 id=msg.id,
                 conversation_id=msg.conversation_id,
@@ -48,7 +57,7 @@ class MessageService:
                 created_at=msg.created_at,
                 edited_at=msg.edited_at,
                 deleted_at=msg.deleted_at,
-                status="sent" # mocked for MVP
+                status=msg_status
             )
             results.append(resp)
             
@@ -84,3 +93,10 @@ class MessageService:
             message_type=msg.message_type,
             created_at=msg.created_at
         )
+
+    async def update_receipt(self, message_id: str, current_user_id: str, status_val: str) -> None:
+        if status_val not in ["delivered", "read"]:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
+            
+        await self.msg_repo.update_receipt(message_id, current_user_id, status_val)
+        await self.msg_repo.session.commit()

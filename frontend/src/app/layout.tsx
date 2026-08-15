@@ -13,6 +13,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
+import { ToastContainer } from '../components/ui/ToastContainer';
+
 // ── Inter from Google Fonts ─────────────────────────────────────────────────
 // Spec reference: ARCHITECTURE §13 (Typography)
 const inter = Inter({
@@ -48,13 +50,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
-      <body className="antialiased">
-        {/*
-         * Phase 5+: <AuthProvider> wraps children here.
-         * Phase 8+: <ToastProvider> wraps children here.
-         * Phase 10+: <WebSocketProvider> wraps children here.
-         */}
+      <body className="antialiased text-text-primary bg-bg-primary h-screen w-screen overflow-hidden">
         {children}
+        <ToastContainer />
       </body>
     </html>
   );
