@@ -3,7 +3,7 @@ import { useChatStore } from '../../stores/chatStore';
 import { useAuthStore } from '../../stores/authStore';
 import { fetchApiWithCredentials } from '../../lib/api';
 import { MessageResponse, ConversationDetail } from '../../types/chat';
-import { Send, User, MoreVertical, ArrowLeft, Paperclip } from 'lucide-react';
+import { Send, User, MoreVertical, ArrowLeft, Paperclip, Plus, Smile, Mic, Video, Phone, Search } from 'lucide-react';
 import { wsClient } from '../../lib/websocket';
 import { useTypingStore } from '../../stores/typingStore';
 
@@ -214,42 +214,63 @@ export function ChatWindow() {
   return (
     <div className="flex-1 flex flex-col bg-bg-primary h-full relative">
       {/* Header */}
-      <div className="h-16 border-b border-border bg-surface-1 flex items-center justify-between px-4 shrink-0 shadow-sm z-10">
+      <div className="h-[52px] border-b border-border-subtle bg-bg-primary flex items-center justify-between px-4 shrink-0 z-10">
         <div className="flex items-center">
           <button
             onClick={() => setActiveConversationId(null)}
-            className="mr-3 p-2 -ml-2 rounded-full hover:bg-surface-2 md:hidden text-text-secondary transition-colors"
+            className="mr-2 p-1.5 -ml-1.5 rounded-full hover:bg-surface-2 md:hidden text-text-secondary transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <div className="h-10 w-10 rounded-full bg-surface-2 flex items-center justify-center border border-border-subtle overflow-hidden">
+          <div className="h-9 w-9 rounded-full bg-surface-3 flex items-center justify-center overflow-hidden cursor-pointer" onClick={() => { if (detail?.type === 'group') setShowMembers(true); }}>
              {detail?.avatar_url ? (
                <img src={detail.avatar_url} alt="Avatar" className="h-full w-full rounded-full object-cover" />
              ) : (
-               <User className="h-5 w-5 text-text-secondary" />
+               <User className="h-[18px] w-[18px] text-text-secondary" />
              )}
           </div>
-          <div className="ml-3">
-            <h2 className="font-medium text-text-primary">{detail?.name || 'Loading...'}</h2>
-            <p className="text-xs text-text-muted">
+          <div className="ml-3 cursor-pointer" onClick={() => { if (detail?.type === 'group') setShowMembers(true); }}>
+            <h2 className="text-[15px] font-semibold text-text-primary leading-tight">{detail?.name || 'Loading...'}</h2>
+            <p className="text-[12px] text-text-secondary leading-tight mt-0.5">
               {detail?.type === 'direct' ? 'Direct Message' : `${detail?.members?.length || 0} members`}
             </p>
           </div>
         </div>
-        <button 
-          onClick={() => {
-            if (detail?.type === 'group') setShowMembers(true);
-          }}
-          className={`p-2 rounded-full transition-colors ${detail?.type === 'group' ? 'hover:bg-surface-2 text-text-secondary' : 'opacity-0 cursor-default'}`}
-          title="View Members"
-          disabled={detail?.type !== 'group'}
-        >
-          <MoreVertical className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            className="h-8 w-8 rounded-full flex items-center justify-center text-text-muted hover:bg-surface-2 hover:text-text-primary transition-colors cursor-not-allowed"
+            title="Video calls are not available in this assignment."
+          >
+            <Video className="h-[18px] w-[18px]" />
+          </button>
+          <button 
+            className="h-8 w-8 rounded-full flex items-center justify-center text-text-muted hover:bg-surface-2 hover:text-text-primary transition-colors cursor-not-allowed"
+            title="Voice calls are not available in this assignment."
+          >
+            <Phone className="h-[18px] w-[18px]" />
+          </button>
+          <div className="w-[1px] h-4 bg-border-subtle mx-0.5"></div>
+          <button 
+            className="h-8 w-8 rounded-full flex items-center justify-center text-text-secondary hover:bg-surface-2 hover:text-text-primary transition-colors"
+            title="Search"
+          >
+            <Search className="h-[18px] w-[18px]" />
+          </button>
+          <button 
+            onClick={() => {
+              if (detail?.type === 'group') setShowMembers(true);
+            }}
+            className={`h-8 w-8 rounded-full flex items-center justify-center text-text-secondary transition-colors ${detail?.type === 'group' ? 'hover:bg-surface-2 hover:text-text-primary' : 'opacity-0 cursor-default'}`}
+            title="View Members"
+            disabled={detail?.type !== 'group'}
+          >
+            <MoreVertical className="h-[18px] w-[18px]" />
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col-reverse bg-bg-primary">
+      <div className="flex-1 overflow-y-auto p-4 md:px-12 lg:px-24 flex flex-col-reverse custom-scrollbar bg-bg-primary">
         <div ref={messagesEndRef} />
         {messages.map((msg, idx) => {
           const isMine = msg.sender.id === user?.id;
@@ -264,48 +285,56 @@ export function ChatWindow() {
           const showAvatar = !isMine && isLastInGroup;
           
           // Signal-style radii
-          let borderRadiusClass = 'rounded-2xl';
+          let borderRadiusClass = 'rounded-[18px]';
           if (isMine) {
-            if (isFirstInGroup && isLastInGroup) borderRadiusClass = 'rounded-2xl rounded-br-[4px]';
-            else if (isFirstInGroup) borderRadiusClass = 'rounded-2xl rounded-br-[4px]';
-            else if (isLastInGroup) borderRadiusClass = 'rounded-2xl rounded-tr-[4px] rounded-br-[4px]';
-            else borderRadiusClass = 'rounded-2xl rounded-r-[4px]';
+            if (isFirstInGroup && isLastInGroup) borderRadiusClass = 'rounded-[18px]';
+            else if (isFirstInGroup) borderRadiusClass = 'rounded-[18px] rounded-br-[4px]';
+            else if (isLastInGroup) borderRadiusClass = 'rounded-[18px] rounded-tr-[4px]';
+            else borderRadiusClass = 'rounded-[18px] rounded-r-[4px]';
           } else {
-            if (isFirstInGroup && isLastInGroup) borderRadiusClass = 'rounded-2xl rounded-bl-[4px]';
-            else if (isFirstInGroup) borderRadiusClass = 'rounded-2xl rounded-bl-[4px]';
-            else if (isLastInGroup) borderRadiusClass = 'rounded-2xl rounded-tl-[4px] rounded-bl-[4px]';
-            else borderRadiusClass = 'rounded-2xl rounded-l-[4px]';
+            if (isFirstInGroup && isLastInGroup) borderRadiusClass = 'rounded-[18px]';
+            else if (isFirstInGroup) borderRadiusClass = 'rounded-[18px] rounded-bl-[4px]';
+            else if (isLastInGroup) borderRadiusClass = 'rounded-[18px] rounded-tl-[4px]';
+            else borderRadiusClass = 'rounded-[18px] rounded-l-[4px]';
           }
           
           return (
-            <div key={msg.id} className={`flex w-full ${isLastInGroup ? 'mb-4' : 'mb-[2px]'} ${isMine ? 'justify-end' : 'justify-start'}`}>
+            <div key={msg.id} className={`flex w-full ${isFirstInGroup ? 'mb-4' : 'mb-[2px]'} ${isMine ? 'justify-end' : 'justify-start'}`}>
               {!isMine && (
                 <div className="w-8 shrink-0 mr-2 flex flex-col justify-end">
                   {showAvatar && (
-                    <div className="h-8 w-8 rounded-full bg-surface-2 flex items-center justify-center border border-border-subtle overflow-hidden">
-                      <User className="h-4 w-4 text-text-secondary" />
+                    <div className="h-7 w-7 rounded-full bg-surface-3 flex items-center justify-center overflow-hidden mb-0.5">
+                      <User className="h-3.5 w-3.5 text-text-secondary" />
                     </div>
                   )}
                 </div>
               )}
               
-              <div className={`max-w-[75%] ${isMine ? 'items-end' : 'items-start'} flex flex-col relative group`}>
-                {isFirstInGroup && !isMine && detail?.type === 'group' && (
+              <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[70%]`}>
+                {!isMine && detail?.type === 'group' && isFirstInGroup && (
                   <span className="text-[12px] font-medium text-text-secondary ml-1 mb-1">{msg.sender.display_name}</span>
                 )}
                 <div 
-                  className={`px-3.5 py-2 shadow-sm text-[15px] leading-[1.3] text-text-primary ${borderRadiusClass}
-                    ${isMine ? 'bg-bubble-outgoing' : 'bg-bubble-incoming border border-border-subtle'}`}
+                  className={`px-3 py-[6px] text-[15px] leading-[1.4] text-text-primary ${borderRadiusClass}
+                    ${isMine ? 'bg-signal-blue' : 'bg-surface-2'}`}
                 >
                   <span className="break-words">{msg.content}</span>
                   
                   {/* Inline Timestamp & Receipts (Signal style, bottom right of bubble) */}
-                  <span className={`inline-flex items-center ml-3 text-[11px] float-right mt-1.5 leading-none
-                    ${isMine ? 'text-[rgba(255,255,255,0.7)]' : 'text-text-muted'}`}>
+                  <span className={`inline-flex items-center ml-3 text-[11px] float-right mt-1.5 leading-none translate-y-0.5
+                    ${isMine ? 'text-white/70' : 'text-text-muted'}`}>
                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     {isMine && (
-                      <span className={`ml-1 flex items-center justify-center ${msg.status === 'read' ? 'text-signal-teal' : ''}`}>
-                        {msg.status === 'sending' ? '⋯' : msg.status === 'sent' ? '✓' : '✓✓'}
+                      <span className="ml-1 flex items-center justify-center text-[10px]">
+                        {msg.status === 'sending' ? (
+                          <span className="opacity-70">⋯</span>
+                        ) : msg.status === 'sent' ? (
+                          <span className="opacity-70 font-bold">✓</span>
+                        ) : msg.status === 'delivered' ? (
+                          <span className="opacity-70 font-bold">✓✓</span>
+                        ) : (
+                          <span className="font-bold">✓✓</span> // Read receipt
+                        )}
                       </span>
                     )}
                   </span>
@@ -341,30 +370,50 @@ export function ChatWindow() {
       </div>
 
       {/* Input */}
-      <div className="p-3 bg-surface-1 border-t border-border shrink-0">
-        <form onSubmit={handleSend} className="flex items-end space-x-3 max-w-4xl mx-auto w-full">
+      <div className="px-4 pb-4 pt-2 bg-bg-primary shrink-0 flex justify-center items-end">
+        <form onSubmit={handleSend} className="flex items-center space-x-3 max-w-3xl w-full">
           <button 
             type="button" 
-            className="p-2.5 rounded-full text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors shrink-0 mb-[2px]"
+            className="h-10 w-10 rounded-full flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors shrink-0"
+            title="Attachment"
           >
-            <Paperclip className="h-5 w-5" />
+            <Plus className="h-[22px] w-[22px]" />
           </button>
-          <div className="flex-1 bg-surface-2 rounded-2xl flex items-end min-h-[44px] overflow-hidden border border-border-subtle focus-within:border-signal-blue focus-within:ring-1 focus-within:ring-signal-blue transition-all">
+          
+          <div className="flex-1 bg-surface-2 rounded-full flex items-center min-h-[44px] px-1 transition-all relative border border-border-subtle focus-within:border-signal-blue/50">
             <input
               type="text"
               value={inputText}
               onChange={handleInputChange}
               placeholder="Signal message"
-              className="w-full bg-transparent border-none focus:ring-0 py-3 px-4 outline-none text-text-primary placeholder:text-text-muted"
+              className="w-full bg-transparent border-none focus:ring-0 py-2.5 pl-4 pr-11 outline-none text-text-primary placeholder:text-text-muted text-[14px]"
             />
+            <button 
+              type="button"
+              className="absolute right-2 h-8 w-8 rounded-full flex items-center justify-center text-text-muted hover:text-text-primary transition-colors"
+              title="Emoji"
+            >
+              <Smile className="h-5 w-5" />
+            </button>
           </div>
-          <button 
-            type="submit" 
-            disabled={!inputText.trim()}
-            className="h-[44px] w-[44px] rounded-full bg-signal-blue hover:bg-signal-blue-dark disabled:bg-surface-2 disabled:text-text-muted flex items-center justify-center text-white shrink-0 transition-colors mb-0"
-          >
-            <Send className="h-5 w-5 ml-0.5" />
-          </button>
+
+          {!inputText.trim() ? (
+            <button 
+              type="button" 
+              className="h-10 w-10 rounded-full hover:bg-surface-2 flex items-center justify-center text-text-muted hover:text-text-primary shrink-0 transition-colors"
+              title="Voice Message"
+            >
+              <Mic className="h-[22px] w-[22px]" />
+            </button>
+          ) : (
+            <button 
+              type="submit" 
+              className="h-10 w-10 rounded-full bg-signal-blue hover:bg-signal-blue-dark flex items-center justify-center text-white shrink-0 transition-colors shadow-sm"
+              title="Send"
+            >
+              <Send className="h-[18px] w-[18px] ml-0.5" />
+            </button>
+          )}
         </form>
       </div>
 

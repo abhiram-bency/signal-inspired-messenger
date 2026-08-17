@@ -162,25 +162,22 @@ export default function ChatPage() {
   return (
     <div className="flex h-screen w-full bg-bg-primary overflow-hidden text-text-primary font-sans antialiased">
       {/* Side Navigation (App Rail) */}
-      <div className={`w-16 bg-surface-1 flex-col items-center py-4 justify-between shrink-0 z-20 border-r border-border ${activeConversationId ? 'hidden md:flex' : 'flex'}`}>
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-10 h-10 rounded-xl bg-signal-blue flex items-center justify-center shadow-lg text-white font-bold text-lg mb-2">
-            S
-          </div>
+      <div className={`w-[60px] bg-bg-primary flex-col items-center py-4 justify-between shrink-0 z-20 ${activeConversationId ? 'hidden md:flex' : 'flex'}`}>
+        <div className="flex flex-col items-center space-y-6">
           <button 
             onClick={() => setIsProfileOpen(true)}
-            className="w-10 h-10 rounded-full bg-surface-2 text-text-primary flex items-center justify-center hover:bg-surface-3 transition-colors" 
+            className="w-9 h-9 rounded-full bg-surface-3 text-text-primary flex items-center justify-center hover:opacity-80 transition-opacity ring-2 ring-transparent hover:ring-signal-blue/50" 
             title={user.display_name}
           >
             {user.avatar_url ? (
-               <img src={user.avatar_url} alt="Profile" className="w-10 h-10 rounded-full object-cover" />
+               <img src={user.avatar_url} alt="Profile" className="w-9 h-9 rounded-full object-cover" />
             ) : (
                <UserIcon className="h-5 w-5 text-text-secondary" />
             )}
           </button>
           <button 
             onClick={() => setIsContactsOpen(true)}
-            className="w-10 h-10 rounded-lg text-text-secondary flex items-center justify-center hover:bg-surface-2 hover:text-text-primary transition-colors mt-2" 
+            className="w-10 h-10 rounded-xl text-text-secondary flex items-center justify-center hover:bg-surface-2 hover:text-text-primary transition-colors" 
             title="Contacts"
           >
             <Users className="h-5 w-5" />
@@ -189,14 +186,14 @@ export default function ChatPage() {
         <div className="flex flex-col items-center space-y-4">
           <button 
             onClick={() => setIsSettingsOpen(true)}
-            className="w-10 h-10 rounded-lg text-text-secondary flex items-center justify-center hover:bg-surface-2 hover:text-text-primary transition-colors"
+            className="w-10 h-10 rounded-xl text-text-secondary flex items-center justify-center hover:bg-surface-2 hover:text-text-primary transition-colors"
             title="Settings"
           >
             <Settings className="h-5 w-5" />
           </button>
           <button 
             onClick={handleLogout}
-            className="w-10 h-10 rounded-lg text-text-secondary flex items-center justify-center hover:bg-surface-2 hover:text-error transition-colors"
+            className="w-10 h-10 rounded-xl text-text-secondary flex items-center justify-center hover:bg-surface-2 hover:text-error transition-colors"
             title="Logout"
           >
             <LogOut className="h-5 w-5" />
@@ -206,10 +203,10 @@ export default function ChatPage() {
 
       {/* Main Layout */}
       <div className="flex-1 flex min-w-0">
-        <div className={`w-full md:w-80 lg:w-96 shrink-0 border-r border-border ${activeConversationId ? 'hidden md:block' : 'block'}`}>
+        <div className={`w-full md:w-[320px] lg:w-[360px] shrink-0 border-r border-border-subtle bg-surface-1 ${activeConversationId ? 'hidden md:block' : 'block'}`}>
           <Sidebar onOpenContacts={() => setIsContactsOpen(true)} />
         </div>
-        <div className={`flex-1 min-w-0 ${!activeConversationId ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`flex-1 min-w-0 bg-bg-primary ${!activeConversationId ? 'hidden md:flex' : 'flex'}`}>
           <ChatWindow />
         </div>
       </div>

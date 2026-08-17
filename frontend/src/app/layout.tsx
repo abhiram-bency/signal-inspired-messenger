@@ -50,7 +50,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
-      <body className="antialiased text-text-primary bg-bg-primary h-screen w-screen overflow-hidden">
+      <body className="antialiased text-text-primary bg-bg-primary min-h-screen flex flex-col">
         {children}
         <ToastContainer />
       </body>
