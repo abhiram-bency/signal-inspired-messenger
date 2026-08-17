@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, and_, desc
 from sqlalchemy.orm import selectinload
 
-from app.database.models import Conversation, ConversationMember, Message, User, generate_uuid, utc_now
+from app.database.models import Conversation, ConversationMember, Message, MessageReceipt, User, generate_uuid, utc_now
 
 class ConversationRepository:
     def __init__(self, session: AsyncSession):
@@ -99,3 +99,23 @@ class ConversationRepository:
             .limit(1)
         )
         return result.scalar_one_or_none()
+
+    async def get_unread_counts(self, user_id: str) -> dict[str, int]:
+        from sqlalchemy import func
+        stmt = (
+            select(Message.conversation_id, func.count(Message.id))
+            .join(ConversationMember, ConversationMember.conversation_id == Message.conversation_id)
+            .outerjoin(MessageReceipt, and_(
+                MessageReceipt.message_id == Message.id,
+                MessageReceipt.user_id == user_id,
+                MessageReceipt.status == "read"
+            ))
+            .where(
+                ConversationMember.user_id == user_id,
+                Message.sender_id != user_id,
+                MessageReceipt.id.is_(None)
+            )
+            .group_by(Message.conversation_id)
+        )
+        result = await self.session.execute(stmt)
+        return {row[0]: row[1] for row in result.all()}

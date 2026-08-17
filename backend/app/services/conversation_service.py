@@ -12,6 +12,7 @@ class ConversationService:
 
     async def get_user_conversations(self, user_id: str) -> List[ConversationListItem]:
         convs = await self.conv_repo.get_user_conversations(user_id)
+        unread_counts = await self.conv_repo.get_unread_counts(user_id)
         results = []
         for c in convs:
             # Format name for direct conversations if not set
@@ -38,7 +39,7 @@ class ConversationService:
                 name=name,
                 avatar_url=c.avatar_url,
                 last_message=preview,
-                unread_count=0, # Simplified for MVP
+                unread_count=unread_counts.get(c.id, 0),
                 updated_at=c.updated_at
             )
             results.append(item)

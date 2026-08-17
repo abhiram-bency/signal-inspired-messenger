@@ -46,6 +46,11 @@ class MessageService:
                     msg_status = "read"
                 elif any(r.status == "delivered" for r in msg.receipts):
                     msg_status = "delivered"
+            elif msg.sender_id != current_user_id and msg.receipts:
+                # Get the current user's own receipt state for this received message
+                user_receipt = next((r for r in msg.receipts if r.user_id == current_user_id), None)
+                if user_receipt:
+                    msg_status = user_receipt.status
             
             resp = MessageResponse(
                 id=msg.id,
